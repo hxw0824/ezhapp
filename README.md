@@ -1,1 +1,2 @@
 # ezhapp
+local update ezhapp
