@@ -1,0 +1,734 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.basis.dao.SysResourceDao">
+    
+	<sql id="sysResourceColumns">
+		a.uuid AS "uuid",
+		a.title AS "title",
+		a.tag AS "tag",
+		a.res_code AS "resCode",
+		a.res_type AS "resType",
+		a.file_name AS "fileName",
+		a.file_auffix AS "fileAuffix",
+		a.file_url AS "fileUrl",
+		a.icon_url AS "iconUrl",
+		a.thumbnail_url AS "thumbnailUrl",
+		a.status AS "status",
+		a.creater AS "creater",
+		a.create_time AS "createTime",
+		a.is_hot AS "isHot",
+		a.is_charge AS "isCharge",
+		a.level AS "level",
+		a.clicknum AS "clicknum",
+		a.remark AS "remark"
+	</sql>
+	<sql id="sysResourceRecentHotColumns">
+		a.uuid AS "uuid",
+		a.title AS "title",
+		a.tag AS "tag",
+		a.res_code AS "resCode",
+		a.res_type AS "resType",
+		a.file_name AS "fileName",
+		a.file_auffix AS "fileAuffix",
+		a.file_url AS "fileUrl",
+		a.icon_url AS "iconUrl",
+		a.thumbnail_url AS "thumbnailUrl",
+		a.status AS "status",
+		a.is_hot AS "isHot",
+		a.is_charge AS "isCharge",
+		a.level AS "level",
+		a.clicknum AS "clicknum"
+	</sql>
+	
+	<sql id="sysResourceJoins">
+	</sql>
+    
+    <select id="getForTemplate" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT 
+			<include refid="sysResourceColumns"/>
+		FROM sys_resource a
+		<include refid="sysResourceJoins"/>
+		LIMIT 1
+	</select>
+    
+	<select id="get" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT 
+			<include refid="sysResourceColumns"/>
+		FROM sys_resource a
+		<include refid="sysResourceJoins"/>
+		WHERE a.uuid = #{uuid}
+	</select>
+	
+	<select id="getByResCode" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT 
+			<include refid="sysResourceColumns"/>
+		FROM sys_resource a
+		<include refid="sysResourceJoins"/>
+		WHERE a.res_code = #{0}
+	</select>
+	<select id="getClickNumByRescode" resultType="java.lang.Integer">
+		SELECT 
+			clicknum
+		FROM sys_resource a
+		
+		WHERE a.res_code = #{0}
+	</select>
+	<select id="getRecentHot" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT
+			h.id AS "id",
+	        h.title AS "title",
+	        h.tag AS "tag",
+	        h.res_code AS "resCode",
+	        h.res_type AS "resType",
+	        h.file_name AS "fileName",
+	        h.file_auffix AS "fileAuffix",
+	        h.file_url AS "fileUrl",
+	        h.icon_url AS "iconUrl",
+	        h.thumbnail_url AS "thumbnailUrl",
+	        h.status AS "status",
+	        h.is_hot AS "isHot",
+	        h.level AS "level",
+	        h.clicknum AS "clicknum",
+	        h.metaCode AS "metaCode",
+	        H.classId AS "classId" ,
+			h.isCharge AS "isCharge" 
+		FROM (
+			SELECT 
+			 	m.id ,
+		        a.title,
+		        a.tag,
+		        a.res_code,
+		        a.res_type,
+		        a.file_name,
+		        a.file_auffix,
+		        a.file_url,
+		        a.icon_url,
+		        a.thumbnail_url,
+		        a.status,
+		        a.is_hot,
+		        a.level,
+		        a.clicknum ,
+		        m.metaCode,
+		        m.classId,
+				<choose>
+					<when test="userId != null and userId !=''">
+						CASE WHEN FIND_IN_SET(m.classId,n.strs) THEN 0  ELSE a.is_charge END AS "isCharge"
+					</when>
+					<otherwise>
+						a.is_charge AS "isCharge"
+					</otherwise>
+				</choose>
+			FROM sys_resource a
+			<if test="userId != null and userId !=''">
+				<![CDATA[
+				LEFT JOIN (
+					SELECT 
+						GROUP_CONCAT(od.period_id) AS "strs"
+					FROM (
+						SELECT
+							o.period_id ,
+							DATE_FORMAT(now(), '%Y-%m-%d %H:%m:%s') >= DATE_FORMAT(max(o.expire_time), '%Y-%m-%d %H:%m:%s') AS "time"
+						FROM 	orders o 
+						LEFT JOIN c_user u  ON o.userid = u.id 
+						WHERE o.userid = #{userId}
+						AND o.is_pay = 1 
+						GROUP BY o.period_id
+					) od WHERE od.time = 0
+				) n ON 1 = 1
+				]]>
+			</if>
+			LEFT JOIN(
+				SELECT 
+					r.id,
+					r.res_Code,
+					r.item2_code AS "metaCode",
+					r.class_id AS "classId",
+					n.strs
+				FROM c_resource_item r
+				LEFT JOIN(
+					SELECT 
+						GROUP_CONCAT(s.res_Code) AS "strs"
+				 	FROM (
+						SELECT 
+							res_code
+						FROM sys_resource
+						ORDER BY clicknum DESC,res_code ASC 
+						LIMIT 6
+					) s 
+				) n on 1 = 1
+				where FIND_IN_SET(r.res_Code,n.strs)
+				ORDER BY r.class_id  
+				LIMIT 6
+			) m ON m.res_Code = a.res_code
+			ORDER BY a.clicknum DESC
+			LIMIT 6
+		) h ORDER BY h.isCharge,h.clicknum DESC
+	</select>
+	
+	<select id="findList" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT 
+			<include refid="sysResourceColumns"/>
+		FROM sys_resource a
+		<include refid="sysResourceJoins"/>
+		<where>
+			<if test="title != null and title != ''">
+				AND a.title LIKE 
+					<if test="dbName == 'oracle'">'%'||#{title}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{title}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{title},'%')</if>
+			</if>
+			<if test="resType != null and resType != ''">
+				AND a.res_type = #{resType}
+			</if>
+			<if test="resCode != null and resCode != ''">
+				AND a.res_code = #{resCode}
+			</if>
+			<if test="fileAuffix != null and fileAuffix != ''">
+				AND a.file_auffix = #{fileAuffix}
+			</if>
+			<if test="isCharge != null and isCharge != ''">
+				AND a.is_charge = #{isCharge}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT 
+			<include refid="sysResourceColumns"/>
+		FROM sys_resource a
+		<include refid="sysResourceJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	
+	
+	
+	
+	<!-- 根据二级目录和班次ID获取所有资源 -->
+	<select id="findByItem2CodeANDClassId" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+            MAX(n.id) AS "id",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge"
+        FROM 
+            c_resource_item n 
+		INNER JOIN
+            sys_resource t  ON n.res_code = t.res_code
+        <where>
+            <choose>
+            	<when test="resType != null and resType != ''">
+            		t.res_type = '0'
+            	</when>
+            	<otherwise>
+            		t.res_type = '1'
+            	</otherwise>
+            </choose>
+        </where>
+        AND n.item1_code = #{item1Code}
+        AND n.item2_code = #{item2Code}
+        AND n.class_id = #{classId}
+        <if test="where != null and where != ''">
+			AND (t.file_auffix = 'mp4' OR t.file_auffix = 'mp3')
+		</if>
+		GROUP BY   
+			t.icon_url ,
+            t.res_code ,
+            t.thumbnail_Url ,
+            t.title  ,
+            t.file_url ,
+            t.file_auffix ,
+            sys_local,
+            t.is_charge  
+		ORDER BY 
+			t.is_charge DESC,
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+	
+	<!-- 根据二级目录和班次ID获取所有资源 （歌曲）-->
+	<select id="findByItem2CodeANDClassIdMusic" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+            MAX(n.id) AS "id",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge"
+        FROM 
+            c_resource_item n 
+		INNER JOIN
+            sys_resource t  ON n.res_code = t.res_code
+        <where>
+            <choose>
+            	<when test="resType != null and resType != ''">
+            		t.res_type = '0'
+            	</when>
+            	<otherwise>
+            		t.res_type = '1'
+            	</otherwise>
+            </choose>
+        </where>
+        AND n.item1_code = #{item1Code}
+        AND n.item2_code = #{item2Code}
+        AND n.class_id = #{classId}
+        <if test="where != null and where != ''">
+			AND (t.file_auffix = 'mp4' OR t.file_auffix = 'mp3')
+		</if>
+		GROUP BY   
+			t.icon_url ,
+            t.res_code ,
+            t.thumbnail_Url ,
+            t.title  ,
+            t.file_url ,
+            t.file_auffix ,
+            sys_local,
+            t.is_charge  
+		ORDER BY 
+			t.is_charge DESC,
+			FIELD(t.file_auffix,'mp4','mp3'),
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+	
+	<!-- 时根据三级目录和班次ID获取所有资源 -->
+	<select id="findByItem3CodeANDClassId" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+            MAX(n.id) AS "id",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge"
+        FROM 
+            c_resource_item n 
+		INNER JOIN
+            sys_resource t  ON n.res_code = t.res_code 
+        <where>
+            <choose>
+            	<when test="resType != null and resType != ''">
+            		t.res_type = '0'
+            	</when>
+            	<otherwise>
+            		t.res_type = '1'
+            	</otherwise>
+            </choose>
+        </where>
+        AND n.item1_code = #{item1Code}
+        AND n.item2_code = #{item2Code}
+        AND n.item3_code = #{item3Code}
+        AND n.class_id = #{classId}
+        <if test="where != null and where != ''">
+			AND (t.file_auffix = 'mp4' OR t.file_auffix = 'mp3')
+		</if>
+		GROUP BY   
+			t.icon_url ,
+            t.res_code ,
+            t.thumbnail_Url ,
+            t.title  ,
+            t.file_url ,
+            t.file_auffix ,
+            sys_local,
+            t.is_charge  
+		ORDER BY 
+			t.is_charge DESC,
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+	
+	<!-- 根据三级目录和班次ID获取所有资源 (歌曲)-->
+	<select id="findByItem3CodeANDClassIdMusic" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+            MAX(n.id) AS "id",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge"
+        FROM 
+            c_resource_item n 
+		INNER JOIN
+            sys_resource t  ON n.res_code = t.res_code 
+        <where>
+            <choose>
+            	<when test="resType != null and resType != ''">
+            		t.res_type = '0'
+            	</when>
+            	<otherwise>
+            		t.res_type = '1'
+            	</otherwise>
+            </choose>
+        </where>
+       	AND n.item1_code = #{item1Code}
+        AND n.item2_code = #{item2Code}
+        AND n.item3_code = #{item3Code}
+        AND n.class_id = #{classId}
+        <if test="where != null and where != ''">
+			AND (t.file_auffix = 'mp4' OR t.file_auffix = 'mp3')
+		</if>
+		GROUP BY   
+			t.icon_url ,
+            t.res_code ,
+            t.thumbnail_Url ,
+            t.title  ,
+            t.file_url ,
+            t.file_auffix ,
+            sys_local,
+            t.is_charge  
+		ORDER BY 
+			t.is_charge DESC,
+			FIELD(t.file_auffix,'mp4','mp3'),
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+	
+	<!-- 未登录查询资源  -->
+	<select id="findAllSearchResourceNoLogin" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+		 	t.res_type AS "res_type",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge",
+            i.level AS "level"
+        FROM 
+            sys_resource t
+        LEFT JOIN (
+        	SELECT
+				sr.res_code AS "res_code",
+				<![CDATA[group_concat(if(it.item3_name='/',CONCAT(it.class_name,'>',it.item1_name,'>',it.item2_name),CONCAT(it.class_name,'>',it.item1_name,'>',it.item2_name,'>',it.item3_name)) ORDER BY it.item1_code ASC separator '\n') as "level"]]>
+			FROM
+				sys_resource sr 
+			LEFT JOIN c_resource_item it ON sr.res_code = it.res_code
+			WHERE 
+			<if test="title != null and title != ''">
+				 sr.title LIKE concat('%',#{title},'%')
+			</if>
+			GROUP BY
+				sr.res_code
+			ORDER BY 
+				LENGTH(it.res_code) ASC,
+				it.res_code ASC
+        ) i ON t.res_code = i.res_code
+        WHERE 
+       	<if test="title != null and title != ''">
+			 t.title LIKE concat('%',#{title},'%')
+		</if>
+		ORDER BY 
+			h.res_type,
+			t.is_charge DESC,
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC 
+	</select>
+	<!-- 未登录查询资源  -->
+	<select id="findSearchResourceNoLogin" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+		 	t.res_type AS "res_type",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.day_thumbnail_Url AS "day_thumbnail_Url",
+            t.day_title AS "day_title",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge",
+            t.level AS "level",
+            t.day_id AS "day_id"
+        FROM 
+            sys_resource t
+
+			WHERE 
+			<if test="_parameter != null and _parameter != ''">
+				 t.title LIKE concat('%',#{title},'%')
+			</if>
+			GROUP BY
+			t.res_type DESC,
+				t.res_code
+
+	</select>
+	
+	<!-- 登录查询资源  -->
+	<select id="findAllSearchResourceLogin" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT
+		    h.res_type,
+			h.icon_url,
+			h.res_code,
+			h.thumbnail_Url,
+			h.title,
+			h.file_url,
+			h.file_auffix,
+			h.sys_local,
+			max(h.is_charge) AS is_charge,
+			i.level AS "level"
+		FROM
+			(
+				SELECT
+					t.res_type AS "res_type",
+					t.icon_url AS "icon_url",
+					t.res_code AS "res_code",
+					t.thumbnail_Url AS "thumbnail_Url",
+					t.title AS "title",
+					t.file_url AS "file_url",
+					t.file_auffix AS "file_auffix",
+					"0" AS "sys_local",
+					(
+						CASE
+						WHEN t.is_charge = '1' THEN '1'
+						WHEN t.is_charge = '0' AND locate(m.class_id,#{classStr})>0 then '1'
+						ELSE '0' END
+					) AS "is_charge"
+				FROM
+					c_resource_item m
+				LEFT JOIN c_resource_fa t ON m.res_code = t.res_code
+				WHERE 
+				<if test="title != null and title != ''">
+					 t.title LIKE concat('%',#{title},'%')
+				</if>
+			) h
+	 	LEFT JOIN (
+        	SELECT
+				sr.res_code AS "res_code",
+				<![CDATA[group_concat(if(it.item3_name='/',CONCAT(it.class_name,'>',it.item1_name,'>',it.item2_name),CONCAT(it.class_name,'>',it.item1_name,'>',it.item2_name,'>',it.item3_name)) ORDER BY it.item1_code ASC separator '\n') as "level"]]>
+			FROM
+				sys_resource sr 
+			LEFT JOIN c_resource_item it ON sr.res_code = it.res_code
+			WHERE 
+			<if test="title != null and title != ''">
+				 sr.title LIKE concat('%',#{title},'%')
+			</if>
+			GROUP BY 
+				sr.res_code
+			ORDER BY 
+				LENGTH(it.res_code) ASC,
+				it.res_code ASC
+       	) i ON h.res_code = i.res_code
+		GROUP BY
+			h.icon_url,
+			h.res_code,
+			h.thumbnail_Url,
+			h.title,
+			h.file_url,
+			h.file_auffix,
+			h.sys_local
+		ORDER BY
+			h.res_type,
+			h.is_charge DESC,
+			LENGTH(h.res_code) ASC,
+			h.res_code ASC
+	</select>
+	<!-- 登录查询资源  -->
+	<select id="findSearchResourceLogin" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		SELECT
+		    h.res_type,
+			h.icon_url,
+			h.res_code,
+			h.thumbnail_Url,
+			h.title,
+			h.file_url,
+			h.file_auffix,
+			h.level AS "level",
+			h.day_thumbnail_Url AS "day_thumbnail_Url",
+            h.day_title AS "day_title",
+            h.day_id AS "day_id",
+			(
+				CASE
+				WHEN h.is_charge = '1' THEN '1'
+				WHEN h.is_charge = '0' AND locate(h.class_id,#{0})>0 then '1'
+				ELSE '0' END
+			) AS "is_charge"
+		FROM 
+					sys_resource h
+				WHERE 
+				<if test="_parameter.param2 != null and _parameter.param2 != ''">
+					 h.title LIKE concat('%',#{1},'%') 
+				</if>
+
+		GROUP BY
+		h.res_type,
+		h.res_code,
+       	h.icon_url,
+        h.thumbnail_Url,
+        h.title,
+        h.file_url,
+        h.file_auffix 
+        
+		ORDER BY
+		h.res_type DESC,
+		h.is_charge DESC,
+		LENGTH(h.res_code) ASC,
+		h.res_code ASC
+	</select>
+	
+	<!-- 根据班次查询资源  -->
+	<select id="findResourceByClassId" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT DISTINCT
+			n.res_code AS "res_code",
+			t.icon_url AS "icon_url",
+			t.thumbnail_Url AS "thumbnail_Url",
+			t.title AS "title",
+			t.file_url AS "file_url",
+			t.file_auffix AS "file_auffix",
+			"0" AS "sys_local",
+			t.is_charge AS "is_charge"
+		FROM
+			c_resource_item n
+		INNER JOIN c_resource_fa t ON n.res_code = t.res_code
+		WHERE t.res_type = '1'
+		AND n.class_id = #{classId}
+		ORDER BY
+			t.is_charge DESC,
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+	
+	<!-- 根据用户ID，资源ID查询评价  -->
+	<select id="findEvalByClassId" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+	
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO sys_resource(
+			uuid,
+			title,
+			tag,
+			res_code,
+			res_type,
+			file_name,
+			file_auffix,
+			file_url,
+			icon_url,
+			thumbnail_url,
+			status,
+			creater,
+			create_time,
+			is_hot,
+			is_charge,
+			remark
+		) VALUES (
+			#{uuid},
+			#{title},
+			#{tag},
+			#{resCode},
+			#{resType},
+			#{fileName},
+			#{fileAuffix},
+			#{fileUrl},
+			#{iconUrl},
+			#{thumbnailUrl},
+			#{status},
+			#{creater},
+			#{createTime},
+			#{isHot},
+			#{isCharge},
+			#{remark}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE sys_resource  SET 	
+			title = #{title},
+			tag = #{tag},
+			file_name = #{fileName},
+			file_auffix = #{fileAuffix},
+			file_url = #{fileUrl},
+			icon_url = #{iconUrl},
+			thumbnail_url = #{thumbnailUrl},
+			status = #{status},
+			is_hot = #{isHot},
+			is_charge = #{isCharge},
+			remark = #{remark}
+		WHERE uuid = #{uuid}
+	</update>
+	<update id="updateClickNum">
+		UPDATE sys_resource  SET 	
+			 clicknum = isnull(clicknum,0)+1
+		WHERE res_code = #{resCode}
+	</update>
+		<update id="addClicksNum" >
+		update sys_resource set clicknum=clicknum+1
+	where 
+		res_code=#{resCode}	
+	</update>
+	<update id="delete">
+		DELETE FROM sys_resource
+		WHERE uuid = #{uuid}
+	</update>
+	
+	
+	
+	
+	<!-- 时根据三级目录和班次ID获取所有资源 -->
+	<select id="findSpecial" resultType="com.zlwh.yzh.admin.modules.basis.entity.SysResource">
+		 SELECT
+            MAX(n.id) AS "id",
+            t.icon_url AS "icon_url",
+            t.res_code AS "res_code",
+            t.thumbnail_Url AS "thumbnail_Url",
+            t.title AS "title",
+            t.file_url AS "file_url",
+            t.file_auffix AS "file_auffix",
+            "0" AS "sys_local",
+            t.is_charge AS "is_charge"
+        FROM 
+            c_resource_item n 
+		INNER JOIN
+            c_resource_fa t  ON n.res_code = t.res_code 
+        WHERE n.item1_code = #{item1Code}
+        <if test="item2Code != null and item2Code != ''">
+			 AND n.item2_code = #{item2Code}
+		</if>
+       	<if test="item3Code != null and item3Code != ''">
+			 AND n.item3_code = #{item3Code}
+		</if>
+        AND n.class_id = #{classId}
+		GROUP BY   
+			t.icon_url ,
+            t.res_code ,
+            t.thumbnail_Url ,
+            t.title  ,
+            t.file_url ,
+            t.file_auffix ,
+            sys_local,
+            t.is_charge  
+		ORDER BY 
+			t.is_charge DESC,
+			LENGTH(t.res_code) ASC,
+			t.res_code ASC
+	</select>
+</mapper>

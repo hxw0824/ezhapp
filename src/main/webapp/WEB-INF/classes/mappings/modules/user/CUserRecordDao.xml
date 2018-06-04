@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.user.dao.CUserRecordDao">
+    
+	<sql id="cUserRecordColumns">
+		a.id AS "id",
+		a.user_id AS "userId",
+		a.course_id AS "courseId",
+		a.update_date AS "updateDate"
+
+	</sql>
+	
+	<sql id="cUserRecordJoins">
+	</sql>
+    
+    <!-- 查询今天是否有学习记录 -->
+    <select id="checkTodayRecord" resultType="String">
+    	select id from c_user_record a 
+    	where a.user_id=#{userId} and a.del_flag = #{DEL_FLAG_NORMAL}
+        and a.course_id = #{courseId} and update_date > CURDATE()
+    </select>
+    
+    
+	<select id="get" resultType="CUserRecord">
+		SELECT 
+			<include refid="cUserRecordColumns"/>
+		FROM c_user_record a
+		<include refid="cUserRecordJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	<!-- 获取我的观看记录列表 -->
+	<select id="getRecordList" resultType="Course">
+		SELECT 
+			#{searchDate},
+			a.course_id AS "courseId",
+			a.update_date AS "updateDate",
+			b.thumbnail_url AS "thumbnailUrl",
+			b.course_name as courseName,
+			c.`name` as monthName
+		FROM c_user_record a , c_course_fa b ,c_month c 
+		where
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			and a.course_id=b.res_Code
+			and a.user_id=#{userId}
+			and b.mon_id=c.id
+		<if test="start != null and start != '' and end != null and end != ''">
+			<![CDATA[
+			 	and unix_timestamp(a.create_date) >= #{start}
+  				and unix_timestamp(a.create_date) < #{end}
+			]]>
+		</if>
+		LIMIT #{offset},#{limit}
+	</select>
+	
+	<!-- 获取我的观看记录列表总数 -->
+	<select id="getRecordListCount" resultType="Integer">
+		SELECT 
+			count(a.course_id)
+		FROM c_user_record a , c_course_fa b ,c_month c 
+		where
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			and a.course_id=b.res_Code
+			and a.user_id=#{userId}
+			and b.mon_id=c.id
+		<if test="start != null and start != '' and end != null and end != ''">
+			<![CDATA[
+			 	and unix_timestamp(a.create_date) >= #{start}
+  				and unix_timestamp(a.create_date) < #{end}
+			]]>
+		</if>
+	</select>
+	
+	
+	
+	<select id="findList" resultType="CUserRecord">
+		SELECT 
+<include refid="cUserRecordColumns"/>
+		FROM c_user_record a
+		<include refid="cUserRecordJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="CUserRecord">
+		SELECT 
+			<include refid="cUserRecordColumns"/>
+		FROM c_user_record a
+		<include refid="cUserRecordJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_user_record(
+			id,
+			user_id,
+			course_id,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{userId},
+			#{courseId},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_user_record SET 	
+			user_id = #{userId},
+			course_id = #{courseId},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE c_user_record SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id} and a.del_flag = #{DEL_FLAG_NORMAL}
+	</update>
+	<!-- 清空学习记录 -->
+		<update id="deleteAllRecord">
+		UPDATE c_user_record a  SET 
+			a.del_flag = #{DEL_FLAG_DELETE}
+		WHERE  a.user_id=#{userId}
+		<!-- <if test="start != null and start != '' and end != null and end != ''">
+		<![CDATA[
+			 	and unix_timestamp(a.create_date) >= #{start}
+  				and unix_timestamp(a.create_date) < #{end}
+			]]>
+		</if> -->
+	
+			and a.del_flag = #{DEL_FLAG_NORMAL}
+	</update>
+	
+</mapper>

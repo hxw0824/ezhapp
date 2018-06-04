@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.fm.dao.FmShowDao">
+    
+	<sql id="fmShowColumns">
+		a.id AS "id",
+		a.res_code AS "resCode",
+		a.name AS "name",
+		a.file_url AS "fileUrl",
+		substring_index(a.file_url,'.',-1) AS "resType",
+		a.icon_url AS "iconUrl",
+		a.thumb_url AS "thumbUrl",
+		a.u_id AS "uid",
+		a.audit_status AS "auditStatus",
+		a.audit_reason AS "auditReason",
+		a.click_num AS "clickNum",
+		a.create_date AS "createDate",
+		a.create_by AS "createBy",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		b.id AS "cUser.id",
+		b.nick_name AS "cUser.nickName",
+		b.image_url AS "cUser.imageUrl"
+	</sql>
+	
+	<sql id="fmShowJoins">
+	LEFT JOIN c_user b ON a.u_id = b.id
+	</sql>
+    
+	<select id="get" resultType="FmShow">
+		SELECT 
+			a.id AS "id",
+			a.res_code AS "resCode",
+			a.name AS "name",
+			a.file_url AS "fileUrl",
+			substring_index(a.file_url,'.',-1) AS "resType",
+			a.click_num AS "clickNum",
+			a.icon_url AS "iconUrl",
+			a.thumb_url AS "thumbUrl",
+			<!-- e.star AS "star", -->
+			CASE WHEN f.score IS NULL THEN 0 ELSE f.score END AS "star",
+			CASE WHEN f.score IS NULL THEN 0 ELSE 1 END AS "isStar"
+		FROM fm_show a
+		<!-- LEFT JOIN (
+			SELECT
+				res_code,
+				floor (sum(score)/count(id)) AS "star"
+			FROM c_evaluation  
+			WHERE res_code = #{id}
+		) e on a.id = e.res_code -->
+		LEFT JOIN(
+            SELECT
+                res_code,
+                score
+            FROM
+                c_evaluation 
+            WHERE user_id = #{userId}
+ 		) f on f.res_code = a.id 
+		WHERE a.id = #{id}
+	</select>
+	<select id="getByIndex" resultType="FmShow">
+		SELECT 
+			a.id AS "id",
+			a.res_code AS "resCode",
+			a.name AS "name",
+			a.file_url AS "fileUrl",
+			substring_index(a.file_url,'.',-1) AS "resType",
+			a.icon_url AS "iconUrl",
+			a.thumb_url AS "thumbUrl"
+		FROM fm_show a
+		<include refid="fmShowJoins"/>
+		WHERE a.audit_status = 0
+		ORDER BY a.create_date DESC
+	 	LIMIT 5
+	</select>
+	
+	<select id="findList" resultType="FmShow">
+		SELECT 
+			<include refid="fmShowColumns"/>
+		FROM fm_show a
+		<include refid="fmShowJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			AND a.audit_status = 1
+			<if test="name != null and name != ''">
+				AND a.name LIKE CONCAT('%',#{name},'%')
+			</if>
+			<if test="uid != null and uid != ''">
+				AND a.u_id = #{uid}
+			</if>
+			<if test="resCode != null and resCode != ''">
+				AND a.res_code = #{resCode}
+			</if>
+			<if test="beginDate != null and beginDate != ''">
+				<![CDATA[
+					AND DATE_FORMAT(a.create_date,'%Y-%m-%d') >= DATE_FORMAT(#{beginDate},'%Y-%m-%d')
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+					AND DATE_FORMAT(a.create_date,'%Y-%m-%d') <= DATE_FORMAT(#{endDate},'%Y-%m-%d')
+				]]>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="FmShow">
+		SELECT 
+			<include refid="fmShowColumns"/>
+		FROM fm_show a
+		<include refid="fmShowJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO fm_show(
+			id,
+			res_code,
+			name,
+			file_url,
+			icon_url,
+			thumb_url,
+			u_id,
+			audit_status,
+			audit_reason,
+			click_num,
+			create_date,
+			create_by,
+			update_date,
+			update_by,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{resCode},
+			#{name},
+			#{fileUrl},
+			#{iconUrl},
+			#{thumbUrl},
+			#{uid},
+			#{auditStatus},
+			#{auditReason},
+			#{clickNum},
+			#{createDate},
+			#{createBy.id},
+			#{updateDate},
+			#{updateBy.id},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE fm_show SET 	
+			res_code = #{resCode},
+			name = #{name},
+			file_url = #{fileUrl},
+			icon_url = #{iconUrl},
+			thumb_url = #{thumbUrl},
+			u_id = #{uid},
+			audit_status = #{auditStatus},
+			audit_reason = #{auditReason},
+			click_num = #{clickNum},
+			update_date = #{updateDate},
+			update_by = #{updateBy.id},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE fm_show SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="changeAudit">
+		UPDATE fm_show SET 
+			audit_status = #{auditStatus}
+			<if test="auditReason != null and auditReason != ''">
+			,audit_reason = #{auditReason}
+			</if>
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 获取家家秀首页数据 -->
+	<select id="getHomeShowIndexList" resultType="FmShow">
+		SELECT 
+			a.res_code AS "resCode",
+			t.name AS "name",
+			a.file_url AS "fileUrl",
+			substring_index(a.file_url,'.',-1) AS "resType",
+			a.icon_url AS "iconUrl",
+			a.thumb_url AS "thumbUrl"
+		FROM fm_show a
+		LEFT JOIN meta_item_tree t 
+		ON a.res_code = t.code
+		WHERE a.audit_status = 0
+		GROUP BY a.res_code
+		ORDER BY a.res_code
+	</select>
+	
+	<!-- 获取家家秀三级数据 -->
+	<select id="getHomeShowListByResCode" resultType="FmShow">
+		SELECT 
+			a.id AS "id",
+			a.res_code AS "resCode",
+			a.name AS "name",
+			a.file_url AS "fileUrl",
+			substring_index(a.file_url,'.',-1) AS "resType",
+			a.icon_url AS "iconUrl",
+			a.thumb_url AS "thumbUrl"
+		FROM fm_show a
+		LEFT JOIN meta_item_tree t 
+		ON a.res_code = t.code
+		WHERE a.res_code = #{resCode}
+		AND a.audit_status = 0
+		ORDER BY a.create_date DESC
+		limit #{pageNo},#{pageSize}
+	</select>
+	
+	<!-- 获取家家秀总数 -->
+	<select id="getHomeShowCountByResCode" resultType="Integer">
+		SELECT 
+			count(a.id)
+		FROM fm_show a
+		LEFT JOIN meta_item_tree t 
+		ON a.res_code = t.code
+		WHERE a.res_code = #{resCode}
+		AND a.audit_status = 0
+		ORDER BY a.create_date DESC
+	</select>
+	
+	<!-- 获取所有用户 -->
+	<select id="getAllUser" resultType="FmShow">
+		SELECT 
+			DISTINCT(a.u_id),
+			b.nick_name AS "cUser.nickName",
+			b.login_name AS "cUser.loginName"
+		FROM fm_show a
+		LEFT JOIN c_user b ON a.u_id = b.id
+	</select>
+	
+	<!-- 审核结果 -->
+	<select id="getAuditList" resultType="FmShow">
+		SELECT 
+			a.id AS "id",
+			m.name AS "resCode",
+			a.create_date AS "createDate",
+			a.name AS "name",
+			a.audit_status AS "auditStatus",
+			a.audit_reason AS "auditReason"
+		FROM  fm_show a 
+		LEFT JOIN meta_item_tree m on m.code = a.res_code
+		WHERE a.u_id = #{userId}
+		<if test="title != null and title != ''">
+			AND a.name LIKE CONCAT('%',#{title},'%')
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND a.res_code = #{resCode}
+		</if>
+		<if test="beginDate != null and beginDate != ''">
+			<![CDATA[
+				AND DATE_FORMAT(a.create_date,'%Y-%m-%d') >= DATE_FORMAT(#{beginDate},'%Y-%m-%d')
+			]]>
+		</if>
+		<if test="endDate != null and endDate != ''">
+			<![CDATA[
+				AND DATE_FORMAT(a.create_date,'%Y-%m-%d') <= DATE_FORMAT(#{endDate},'%Y-%m-%d')
+			]]>
+		</if>
+		ORDER BY a.audit_status DESC,a.create_date DESC
+		LIMIT #{offset},#{limit}
+	</select>
+	
+	<!-- 审核结果总数 -->
+	<select id="getAuditListCount" resultType="Integer">
+		SELECT 
+			COUNT(a.id)
+		FROM  fm_show a 
+		WHERE a.u_id = #{userId}
+		<if test="title != null and title != ''">
+			AND a.name LIKE CONCAT('%',#{title},'%')
+		</if>
+		<if test="resCode != null and resCode != ''">
+			AND a.res_code = #{resCode}
+		</if>
+		<if test="beginDate != null and beginDate != ''">
+			<![CDATA[
+				AND DATE_FORMAT(a.create_date,'%Y-%m-%d') >= DATE_FORMAT(#{beginDate},'%Y-%m-%d')
+			]]>
+		</if>
+		<if test="endDate != null and endDate != ''">
+			<![CDATA[
+				AND DATE_FORMAT(a.create_date,'%Y-%m-%d') <= DATE_FORMAT(#{endDate},'%Y-%m-%d')
+			]]>
+		</if>
+		ORDER BY a.audit_status DESC,a.create_date DESC
+	</select>
+	
+	<!-- 大家都在看 -->
+	<select id="getRecentHot" resultType="FmShow">
+		SELECT 
+			a.id AS "id",
+			a.res_code AS "resCode",
+			a.name AS "name",
+			a.click_num AS "clickNum",
+			a.file_url AS "fileUrl",
+			substring_index(a.file_url,'.',-1) AS "resType",
+			a.icon_url AS "iconUrl",
+			a.thumb_url AS "thumbUrl"
+		FROM fm_show a
+		WHERE a.audit_status = 0
+		ORDER BY a.click_num DESC,a.create_date DESC
+	 	LIMIT 6
+	</select>
+	
+	<update id="addClick">
+		UPDATE fm_show SET click_num = click_num + 1
+		WHERE  id = #{id}	
+	</update>
+</mapper>

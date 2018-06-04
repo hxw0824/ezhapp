@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.book.dao.ResourceItemDao">
+    
+	<sql id="ResourceItemColumns">
+		a.id AS "id",
+		a.res_code AS "resCode",
+		a.class_id AS "classId",
+		a.class_name AS "className",
+		a.item1_code AS "item1Code",
+		a.item1_name AS "item1Name",
+		a.item2_code AS "item2Code",
+		a.item2_name AS "item2Name",
+		a.item3_code AS "item3Code",
+		a.item3_name AS "item3Name",
+		a.sort AS "sort",
+		case when b.clicknum is null then 0 else b.clicknum end AS "clicknum",
+		a.create_date AS "createDate",
+		b.uuid AS "sysresource.uuid",
+		b.title AS "sysresource.title",
+		b.tag AS "sysresource.tag",
+		b.res_code AS "sysresource.resCode",
+		b.res_type AS "sysresource.resType",
+		b.file_name AS "sysresource.fileName",
+		b.file_auffix AS "sysresource.fileAuffix",
+		b.file_url AS "sysresource.fileUrl",
+		b.icon_url AS "sysresource.iconUrl",
+		b.thumbnail_url AS "sysresource.thumbnailUrl",
+		b.status AS "sysresource.status",
+		b.creater AS "sysresource.creater",
+		b.create_time AS "sysresource.createTime",
+		b.is_hot AS "sysresource.isHot",
+		b.is_charge AS "sysresource.isCharge",
+		b.remark AS "sysresource.remark"
+	</sql>
+	<sql id="ResourceItemColumnsByIndex">
+		a.id AS "id",
+		a.class_name AS "className",
+		a.item1_name AS "item1Name",
+		a.item2_name AS "item2Name",
+		a.res_code AS "resCode",
+		case when b.clicknum is null then 0 else b.clicknum end AS "clicknum",
+		b.title AS "sysresource.title",
+		b.tag AS "sysresource.tag",
+		b.remark AS "sysresource.remark",
+		b.res_type AS "sysresource.resType",
+		b.file_name AS "sysresource.fileName",
+		b.file_auffix AS "sysresource.fileAuffix",
+		b.file_url AS "sysresource.fileUrl",
+		b.icon_url AS "sysresource.iconUrl",
+		b.is_charge AS "sysresource.isCharge",
+		b.thumbnail_url AS "sysresource.thumbnailUrl"
+	</sql>
+	
+	<sql id="ResourceItemJoins">
+		LEFT JOIN sys_resource b ON a.res_code = b.res_code
+	</sql>
+    
+    <select id="getForTemplate" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		LIMIT 1
+	</select>
+    
+	<select id="get" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getResourceByAny" resultType="ResourceItem">
+		SELECT 
+			h.id AS "id",
+			h.res_code AS "resCode",
+			h.class_id AS "classId",
+			h.class_name AS "className",
+			h.item1_code AS "item1Code",
+			h.item1_name AS "item1Name",
+			h.item2_code AS "item2Code",
+			h.item2_name AS "item2Name",
+			h.item3_code AS "item3Code",
+			h.item3_name AS "item3Name",
+			h.sort AS "sort",
+			h.create_date AS "createDate",
+			h.title AS "sysresource.title",
+			h.tag AS "sysresource.tag",
+			h.res_code AS "sysresource.resCode",
+			h.res_type AS "sysresource.resType",
+			h.file_name AS "sysresource.fileName",
+			h.file_auffix AS "sysresource.fileAuffix",
+			h.file_url AS "sysresource.fileUrl",
+			h.icon_url AS "sysresource.iconUrl",
+			h.thumbnail_url AS "sysresource.thumbnailUrl",
+			h.status AS "sysresource.status",
+			h.is_hot AS "sysresource.isHot",
+			h.remark AS "sysresource.remark",
+			h.clicknum AS "clicknum",
+			h.star AS "star",
+			h.isStar AS "isStar",
+			h.isCollect AS "isCollect",
+			h.isCharge AS "sysresource.isCharge"
+		FROM (
+			SELECT 
+				a.id,
+				a.res_code,
+				a.class_id,
+				a.class_name,
+				a.item1_code,
+				a.item1_name,
+				a.item2_code,
+				a.item2_name,
+				a.item3_code,
+				a.item3_name,
+				a.sort,
+				a.create_date,
+				b.title,
+				b.tag,
+				b.res_type,
+				b.file_name,
+				b.file_auffix,
+				b.file_url,
+				b.icon_url,
+				b.thumbnail_url,
+				b.status,
+				b.is_hot,
+				b.remark,
+				CASE WHEN b.clicknum IS NULL THEN 0 ELSE b.clicknum END AS "clicknum",
+				<!-- <choose>
+					<when test="id != null and id != ''">
+						CASE WHEN e.score IS NULL THEN 0 ELSE e.score END AS "star",
+					</when>
+					<otherwise>
+						0 AS "star",
+					</otherwise>
+				</choose> -->
+				<choose>
+					<when test="userId != null and userId !=''">
+						CASE WHEN f.score IS NULL THEN 0 ELSE f.score END AS "star",
+						CASE WHEN f.score IS NULL THEN 0 ELSE 1 END AS "isStar",
+						CASE WHEN c.id IS NULL THEN 0 ELSE 1 END AS "isCollect",
+						CASE WHEN FIND_IN_SET(a.class_id,n.strs) THEN 0  ELSE b.is_charge END AS "isCharge"
+					</when>
+					<otherwise>
+						0 AS "star",
+						0 AS "isStar",
+						0 AS "isCollect",
+						b.is_charge AS "isCharge"
+					</otherwise>
+				</choose>
+			FROM c_resource_item a
+			LEFT JOIN sys_resource b ON a.res_code = b.res_code
+			<!--<if test="id != null and id != ''">  资源评星平均值（大家评星使用）
+	 			LEFT JOIN (
+					SELECT
+						res_code,
+						floor (sum(score)/count(id)) AS "score"
+					FROM c_evaluation  
+					WHERE res_code = (select res_code from c_resource_item where id = #{id})
+				) e on e.res_code = a.res_code
+			</if> -->
+			<if test="userId != null and userId !=''">
+				<![CDATA[
+				LEFT JOIN(
+		            SELECT
+		                res_code,
+		                score
+		            FROM
+		                c_evaluation 
+		            WHERE user_id = #{userId}
+		 		) f on f.res_code = a.res_code 
+				LEFT JOIN (
+					select 
+						id,
+						course_id
+					from c_user_collection where user_id = #{userId}
+				) c on c.course_id = a.res_code
+				LEFT JOIN (
+					SELECT 
+						GROUP_CONCAT(od.period_id) AS "strs"
+					FROM (
+						SELECT
+							o.period_id ,
+							DATE_FORMAT(now(), '%Y-%m-%d %H:%m:%s') >= DATE_FORMAT(max(o.expire_time), '%Y-%m-%d %H:%m:%s') AS "time"
+						FROM 	orders o 
+						LEFT JOIN c_user u  ON o.userid = u.id 
+						WHERE o.userid = #{userId}
+						AND o.is_pay = 1 
+						GROUP BY o.period_id
+					) od WHERE od.time = 0
+				) n ON 1 = 1
+				]]>
+			</if>
+			<where>
+				<choose>
+					<when test="id != null and id != ''">
+						a.id = #{id}
+					</when>
+					<when test="title != null and title != ''">
+						b.title LIKE CONCAT('%',#{title},'%')
+					</when>
+					<when test="periodId != null and periodId != '' and itemId != null and itemId != ''">
+						a.class_id = #{periodId} 
+						AND a.item2_code = #{itemId}
+					</when>
+					<otherwise>  
+		                1 = 1
+		            </otherwise>
+				</choose>
+			 </where>
+		) h 
+		ORDER BY h.isCharge,h.id
+		<choose>
+			<when test="pageNo != null and pageSize != null">
+				LIMIT #{pageNo},#{pageSize}
+			</when>
+			<when test="index != null and index != ''">
+				LIMIT 5
+			</when>
+			<otherwise>  
+            </otherwise>
+		</choose>
+	</select>
+	
+	<select id="getResourceItemCount" resultType="Integer">
+		SELECT 
+			count(a.id)
+		FROM c_resource_item a
+		WHERE a.class_id = #{periodId} 
+		AND a.item2_code = #{itemId}
+	</select>
+	
+	<select id="getSearchListCount" resultType="Integer">
+		SELECT 
+			count(a.id)
+		FROM c_resource_item a
+		LEFT JOIN sys_resource b ON a.res_code = b.res_code
+		<where>
+			<if test="title != null and title != ''">
+				b.title LIKE CONCAT('%',#{title},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="findList" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		<where>
+			<if test="id != null and id != ''">
+				AND a.id = #{id}
+			</if>
+			<if test="resCode != null and resCode != ''">
+				AND a.res_code = #{resCode}
+			</if>
+			<if test="classId != null and classId != ''">
+				AND a.class_id = #{classId}
+			</if>
+			<if test="item1Code != null and item1Code != ''">
+				AND a.item1_code = #{item1Code}
+			</if>
+			<if test="item1Name != null and item1Name != ''">
+				AND a.item1_name LIKE concat('%',#{item1Name},'%')
+			</if>
+			<if test="item2Code != null and item2Code != ''">
+				AND a.item2_code = #{item2Code}
+			</if>
+			<if test="item2Name != null and item2Name != ''">
+				AND a.item2_name LIKE concat('%',#{item2Name},'%')
+			</if>
+			<if test="item3Code != null and item3Code != ''">
+				AND a.item3_code = #{item3Code}
+			</if>
+			<if test="item3Name != null and item3Name != ''">
+				AND a.item3_name LIKE concat('%',#{item3Name},'%')
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findByItem3CodeANDClassId" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		WHERE a.item3_code = #{item3Code}
+		AND a.class_id = #{classId}
+		ORDER BY b.is_charge DESC,b.is_hot DESC,b.res_type ASC,a.id ASC,a.sort ASC
+	</select>
+	
+	<select id="findByItem2CodeANDClassId" resultType="ResourceItem">
+		SELECT 
+			<include refid="ResourceItemColumns"/>
+		FROM c_resource_item a
+		<include refid="ResourceItemJoins"/>
+		WHERE a.item2_code = #{item2Code}
+		AND a.class_id = #{classId}
+		ORDER BY b.is_charge DESC,b.is_hot DESC,b.res_type ASC,a.id ASC,a.sort ASC
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_resource_item(
+			id,
+			res_code,
+			class_id,
+			class_name,
+			item1_code,
+			item1_name,
+			item2_code,
+			item2_name,
+			item3_code,
+			item3_name,
+			sort,
+			create_date
+		) VALUES (
+			#{id},
+			#{resCode},
+			#{classId},
+			#{className},
+			#{item1Code},
+			#{item1Name},
+			#{item2Code},
+			#{item2Name},
+			#{item3Code},
+			#{item3Name},
+			#{sort},
+			#{createDate}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_resource_item SET 	
+			res_code = #{resCode},
+			class_id = #{classId},
+			class_name = #{className},
+			item1_code = #{item1Code},
+			item1_name = #{item1Name},
+			item2_code = #{item2Code},
+			item2_name = #{item2Name},
+			item3_code = #{item3Code},
+			item3_name = #{item3Name},
+			sort = #{sort}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM c_resource_item
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

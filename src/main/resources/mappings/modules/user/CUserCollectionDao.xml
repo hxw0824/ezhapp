@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.user.dao.CUserCollectionDao">
+    
+	<sql id="cUserCollectionColumns">
+		a.id AS "id",
+		a.user_id AS "userId",
+		a.course_id AS "courseId",
+		a.href AS "href",
+		a.create_date AS "createDate",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="cUserCollectionJoins">
+	</sql>
+    
+	<select id="get" resultType="CUserCollection">
+		SELECT 
+			<include refid="cUserCollectionColumns"/>
+		FROM c_user_collection a
+		<include refid="cUserCollectionJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="CUserCollection">
+		SELECT 
+			<include refid="cUserCollectionColumns"/>
+		FROM c_user_collection a
+		<include refid="cUserCollectionJoins"/>
+		<where>
+			a.del_flag = '0'
+			<if test="id != null and id != ''">
+				and a.id = #{id}
+			</if>
+			<if test="userId != null and userId != ''">
+				and a.user_id = #{userId}
+			</if>
+			<if test="courseId != null and courseId != ''">
+				and a.course_id = #{courseId}
+			</if>
+			<if test="createDate != null and createDate != ''">
+				and a.create_date > #{createDate}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="CUserCollection">
+		SELECT 
+			<include refid="cUserCollectionColumns"/>
+		FROM c_user_collection a
+		<include refid="cUserCollectionJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_user_collection(
+			id,
+			user_id,
+			course_id,
+			href,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{userId},
+			#{courseId},
+			#{href},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_user_collection SET 	
+			user_id = #{userId},
+			course_id = #{courseId},
+			href = #{href},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM c_user_collection
+		WHERE user_id=#{userId}
+			and course_id =#{courseId}
+	</update>
+	<!-- 获取我的收藏信息 -->
+	<select id="getUserCollectionList" resultType="Course">
+		select 
+			a.course_id as courseId,
+			a.href as href,
+			b.file_name as courseName,
+			a.update_date as updateDate,
+			b.thumbnail_url as thumbnailUrl
+		from  c_user_collection a ,sys_resource b 
+	 	WHERE del_flag='0'
+	 		and a.course_id=b.res_Code 
+			and a.user_id=#{userId}
+		ORDER BY a.update_date DESC
+	 	LIMIT #{offset},#{limit}
+	</select>
+	
+	<!-- 获取收藏列表总条数 -->
+	<select id="getCollectionCount" resultType="Integer">
+		select 
+			count(a.id) 
+		from c_user_collection a,sys_resource b 
+		WHERE a.course_id=b.res_Code and a.user_id=#{userId}
+	</select>
+</mapper>

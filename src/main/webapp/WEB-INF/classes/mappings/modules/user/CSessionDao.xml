@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.user.dao.CSessionDao">
+    
+	<sql id="cSessionColumns">
+		a.id AS "id",
+		a.user_id AS "userId",
+		a.session_id AS "sessionId",
+		a.device_type AS "deviceType",
+		a.login_ip AS "loginIp",
+		a.login_time AS "loginTime",
+		a.logout_time AS "logoutTime",
+		a.status AS "status"
+	</sql>
+	
+	<sql id="cSessionJoins">
+	</sql>
+    
+	<select id="get" resultType="CSession">
+		SELECT 
+			<include refid="cSessionColumns"/>
+		FROM c_session a
+		<include refid="cSessionJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="CSession">
+		SELECT 
+			<include refid="cSessionColumns"/>
+		FROM c_session a
+		<include refid="cSessionJoins"/>
+		<where>
+			<if test="userId != null and userId != ''">
+				and a.user_id = #{userId}
+			</if>
+			<if test="sessionId != null and sessionId != ''">
+				and a.session_id = #{sessionId}
+			</if>
+			<if test="status != null and status != ''">
+				and a.status = #{status}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY login_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="CSession">
+		SELECT 
+			<include refid="cSessionColumns"/>
+		FROM c_session a
+		<include refid="cSessionJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_session(
+			id,
+			user_id,
+			session_id,
+			device_type,
+			login_ip,
+			login_time,
+			logout_time,
+			status
+		) VALUES (
+			#{id},
+			#{userId},
+			#{sessionId},
+			#{deviceType},
+			#{loginIp},
+			#{loginTime},
+			#{logoutTime},
+			#{status}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_session SET 	
+			user_id = #{userId},
+			session_id = #{sessionId},
+			device_type = #{deviceType},
+			login_ip = #{loginIp},
+			login_time = #{loginTime},
+			logout_time = #{logoutTime},
+			status = #{status}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM c_session
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

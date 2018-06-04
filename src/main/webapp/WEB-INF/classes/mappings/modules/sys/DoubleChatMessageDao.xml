@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.sys.dao.DoubleChatMessageDao">
+    
+	<sql id="doubleChatMessageColumns">
+		a.id AS "id",
+		a.room_id AS "roomId",
+		a.`from` AS "from",
+		a.text AS "text",
+		a.audio AS "audio",
+		a.image AS "image",
+		a.type AS "type",
+		a.create_time AS "createTime",
+		a.del_flag AS "delFlag",
+		u.name AS "userName"
+	</sql>
+	
+	<sql id="doubleChatMessageJoins">
+		LEFT JOIN sys_user u ON u.login_name = a.`from`
+	</sql>
+    
+	<select id="get" resultType="DoubleChatMessage">
+		SELECT 
+			<include refid="doubleChatMessageColumns"/>
+		FROM double_chat_message a
+		<include refid="doubleChatMessageJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="DoubleChatMessage">
+		SELECT 
+			<include refid="doubleChatMessageColumns"/>
+		FROM double_chat_message a
+		<include refid="doubleChatMessageJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="type != null and type != ''">
+				AND a.type = #{type}
+			</if>
+			<if test="from != null and from != ''">
+				AND a.`from` = #{from}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_time DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="DoubleChatMessage">
+		SELECT 
+			<include refid="doubleChatMessageColumns"/>
+		FROM double_chat_message a
+		<include refid="doubleChatMessageJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO double_chat_message(
+			id,
+			room_id,
+			from,
+			text,
+			audio,
+			image,
+			type,
+			create_time,
+			del_flag
+		) VALUES (
+			#{id},
+			#{roomId},
+			#{from},
+			#{text},
+			#{audio},
+			#{image},
+			#{type},
+			#{createTime},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE double_chat_message SET 	
+			room_id = #{roomId},
+			from = #{from},
+			text = #{text},
+			audio = #{audio},
+			image = #{image},
+			type = #{type},
+			create_time = #{createTime}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE double_chat_message SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

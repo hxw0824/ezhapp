@@ -1,0 +1,274 @@
+header{
+	width:100%;
+	height:1.28rem;
+	box-sizing:border-box;
+	padding:0.2rem 0.2rem 0;
+}
+.headImg{
+	width:0.87rem;
+	height:0.87rem;
+	float:left;
+	background:orange;
+}
+.headIfo{
+	float:left;
+	padding-left:0.2rem;
+}
+.headIfo p:nth-child(1){
+	line-height:0.46rem;
+	font-size:0.3rem;
+	color:#FF7700;
+	font-family: "黑体";
+}
+.headIfo p:nth-child(2){
+	line-height:0.41rem;
+	font-size:0.25rem;
+	color:#999999;
+	font-family:arial;
+}
+.main{
+	width:100%;
+	height:4.33rem;
+	box-sizing:border-box;
+	padding:0 0.2rem;	
+}
+.swiper-container{
+	height:100%;
+}
+.main .swiper-container .swiper-pagination{
+	height:0.35rem;
+	bottom:0;
+	background:rgba(0,0,0,0.5);
+}
+.main .swiper-container .swiper-pagination .swiper-pagination-bullet{
+	width:0.18rem;
+	height:0.18rem;
+	background:#999;
+	opacity:1;
+	border-radius:50%;
+	margin-top:0.08rem;
+}
+.main .swiper-container .swiper-pagination .swiper-pagination-bullet-active{
+	background:#FF7700;
+}
+.recoInfo{
+	width:100%;
+	height:0.6rem;
+	line-height:0.3rem;
+	box-sizing:border-box;
+	padding:0 0.2rem;
+	margin:0.06rem 0 0.36rem 0;
+	font-size:0.25rem;
+	color:#1E1E1E;
+	font-family:"黑体";
+}
+.discussInfo{
+	width:100%;
+	box-sizing: border-box;
+	padding:0 0.2rem;
+	
+}
+.disInfo_con{
+	width:100%;
+	height:100%;
+	background:#EBEBEB;
+	position:relative;
+}
+.trIcon{
+	width:0;
+    height:0;
+    border-width:0 0.1rem 0.1rem;
+    border-style:solid;
+    border-color:transparent transparent #EBEBEB;/*透明 透明  灰*/
+    position:absolute;
+    left:0.15rem;
+    top:-0.1rem;
+}
+.disInfo_sup{
+	width:100%;
+	overflow:hidden;
+	border-bottom:1px solid #C7C7C7;
+}
+.disInfo_top{
+	width:100%;
+	height:0.48rem;
+	position:relative;
+}
+.disIcon1{
+	width:0.18rem;
+	height:0.24rem;
+	background:url(../img/disIcon.png) no-repeat;
+	position:absolute;
+	left:0.2rem;
+	top:0.1rem;
+	background-size:100% 100%;
+}
+.disInfo_top p{
+	padding-left:0.56rem;
+	line-height:0.48rem;
+	font-size:0.2rem;
+	color:#999;
+	font-family: "黑体";
+}
+.disInfo_top p span{
+	padding-right:0.06rem;
+	font-family: Arial;
+}
+.disInfo_bot{
+	width:100%;
+	box-sizing:border-box;
+	padding-left:0.56rem;
+	overflow:hidden;
+}
+.disImg li{
+	width:0.5rem;
+	height:0.5rem;
+	float:left;
+	margin:0 0.1rem 0.1rem 0;
+	background:blue;
+}
+.disInfo_num{
+	width:100%;
+	overflow:hidden;
+}
+.disInfo_num_top{
+	width:100%;
+	height:0.48rem;
+	box-sizing:border-box;
+	padding-left:0.56rem;
+	position:relative;
+}
+.disIcon2{
+	width:0.17rem;
+	height:0.17rem;
+	background:url(../img/disIcon2.png) no-repeat;
+	position:absolute;
+	left:0.2rem;
+	top:0.16rem;
+	background-size:100% 100%;
+}
+.disInfo_num_top p{
+	line-height:0.48rem;
+	font-size:0.2rem;
+	color:#999999;
+	font-family: "黑体";
+}
+.disInfo_num_top p span{
+	padding-right:0.06rem;
+	font-family: Arial;
+}
+.disInfo_num_bot{
+	width:100%;
+	box-sizing:border-box;
+	padding-left:0.56rem;
+	overflow:hidden;
+}
+.disInfo_num_bot_sub{
+	width:100%;
+	box-sizing:border-box;
+	padding-right:0.18rem;
+	overflow:hidden;
+	margin-bottom:0.25rem;
+}
+.sun_con_left{
+	width:0.5rem;
+	height:0.5rem;
+	float:left;
+	background:red;
+}
+.sun_con_right{
+	margin-left:0.5rem;
+}
+.sun_con_right_con{
+	width:100%;
+	box-sizing:border-box;
+	float:left;
+	padding-left:0.1rem;
+	position:relative;
+}
+.sub_name{
+	font-size:0.25rem;
+	color:#FF7700;
+	font-family:"黑体";
+}
+.disReply{
+	font-size:0.25rem;
+	font-family:"黑体";
+}
+.sub_disInfo{
+	line-height:0.3rem;
+	font-size:0.25rem;
+	color:#1E1E1E;
+	margin-top:0.16rem;
+	font-family:"黑体";
+}
+.subtime{
+	font-size:0.25rem;
+	position:absolute;
+	right:0;
+	top:0;
+	color:#999;
+	font-weight:normal;
+	font-family:"黑体";
+}
+footer{
+	width:100%;
+	overflow:hidden;
+	margin-top:0.32rem;
+	margin-bottom:0.6rem;
+}
+.footer_top{
+	width:100%;
+	height:0.6rem;
+	color:#FF0000;
+	box-sizing:border-box;
+	padding:0 0.2rem;
+	text-align:center;
+	position:relative;
+}
+.footer_top p{
+	width:100%;
+	height:100%;
+	background:#F5F5F5;
+	line-height:0.65rem;
+	font-size:0.3rem;	
+	font-weight:bold;
+	font-family: "黑体";
+}
+.downLoad{
+	width:0.28rem;
+	height:0.25rem;
+	background:url(../img/disIcon3.png) no-repeat;
+	position:absolute;
+	left:50%;
+	bottom:-0.2rem;
+	background-size:100% 100%;
+}
+.footer_bot{
+	width:100%;
+	margin-top:0.22rem;
+}
+.footer_bot a{
+	display:block;
+	width:4.4rem;
+	height: 0.64rem;
+	background:#2B9B1F;
+	color:white;
+	text-align:center;
+	line-height:0.64rem;
+	border-radius:4px;
+	margin: 0 auto;
+	font-size:0.3rem;
+	letter-spacing:0.1rem;
+	font-family: "黑体";
+}
+
+
+
+
+
+
+
+
+
+

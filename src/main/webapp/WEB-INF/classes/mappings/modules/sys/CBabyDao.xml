@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.sys.dao.CBabyDao">
+    
+	<sql id="cBabyColumns">
+		a.id AS "id",
+		a.office_id AS "officeId",
+		a.class_id AS "classId",
+		a.user_id AS "userId",
+		a.text AS "text",
+		a.img_id AS "imgId",
+		a.create_date AS "createDate",
+		a.del_flag AS "delFlag",
+		cc.name AS "className",
+		u.name AS "userName",
+		o.name AS "officeName"
+	</sql>
+	
+	<sql id="cBabyJoins">
+		LEFT JOIN c_class cc ON cc.id = a.class_id
+		LEFT JOIN sys_user u ON u.id = a.user_id
+		LEFT JOIN sys_office o ON o.id = a.office_id
+	</sql>
+    
+	<select id="get" resultType="CBaby">
+		SELECT 
+			<include refid="cBabyColumns"/>
+		FROM c_baby a
+		<include refid="cBabyJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="CBaby">
+		SELECT 
+			<include refid="cBabyColumns"/>
+		FROM c_baby a
+		<include refid="cBabyJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="officeId != null and officeId != ''">
+				AND a.office_id = #{officeId}
+			</if>
+			<if test="classId != null and classId != ''">
+				AND a.class_id = #{classId}
+			</if>
+			<if test="userId != null and userId != ''">
+				AND a.user_id = #{userId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="CBaby">
+		SELECT 
+			<include refid="cBabyColumns"/>
+		FROM c_baby a
+		<include refid="cBabyJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_baby(
+			id,
+			office_id,
+			class_id,
+			user_id,
+			text,
+			img_id,
+			create_date,
+			del_flag
+		) VALUES (
+			#{id},
+			#{officeId},
+			#{classId},
+			#{userId},
+			#{text},
+			#{imgId},
+			#{createDate},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_baby SET 	
+			office_id = #{officeId},
+			class_id = #{classId},
+			user_id = #{userId},
+			text = #{text},
+			img_id = #{imgId}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE c_baby SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

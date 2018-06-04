@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zlwh.yzh.admin.modules.book.dao.CourseDao">
+	<sql id="courseColumns">
+		a.id AS "id",
+		a.mon_val AS "monval",
+		a.mon_id AS "monid",
+		a.course_name AS "courseName",
+		a.res_Code AS "resCode",
+		a.content AS "content",
+		a.thumbnail_url AS "thumbnailUrl",
+		a.iconUrl AS "iconUrl",
+		a.video_path AS "videoPath",
+		a.sort AS "sort",
+		a.clicksNum ,
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		a.id as courseId,
+		a.type as resType,
+		a.isFree AS "isCharge"
+	</sql>
+	<sql id="courseColumnsByIndex">
+		a.id AS "id",
+		a.recommend_sort AS recommendSort,
+		a.sort AS sort,
+		a.mon_val AS "monval",
+		a.mon_id AS "monid",
+		a.course_name AS "courseName",
+		a.res_Code AS "resCode",
+		a.content AS "content",
+		a.thumbnail_url AS "thumbnailUrl",
+		a.icon_Url AS "iconUrl",
+		a.video_path AS "videoPath",
+		a.tagcode AS "tagcode",
+		a.tag AS "tag",
+		a.type as resType,
+		a.isFree AS "isCharge"
+	</sql>
+	
+	<sql id="courseJoins">
+	</sql>
+    
+	<select id="getByCourseCode" resultType="Course">
+		SELECT 
+			<include refid="courseColumnsByIndex"/>
+		FROM c_course_fa a
+		<include refid="courseJoins"/>
+		left JOIN sys_resource s
+		ON a.res_Code = s.res_code
+		WHERE a.res_Code = #{0}
+		AND s.res_Code = #{0}
+	</select>
+	<select id="getById" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM c_course_fa a
+		<include refid="courseJoins"/>
+		WHERE a.course_code = #{0}
+	</select>
+	
+	<select id="getSingleRes" resultType="Course">
+		SELECT 
+			a.id AS "id",
+			a.recommend_sort AS recommendSort,
+			a.sort AS sort,
+			a.mon_val AS "monval",
+			a.mon_id AS "monid",
+			a.course_name AS "courseName",
+			a.res_Code AS "resCode",
+			a.content AS "content",
+			a.thumbnail_url AS "thumbnailUrl",
+			a.icon_Url AS "iconUrl",
+			a.video_path AS "videoPath",
+			a.tagcode AS "tagcode",
+			a.tag AS "tag",
+			a.type as resType,
+			b.title AS "sysResource.title",
+			b.tag AS "sysResource.tag",
+			b.res_code AS "sysResource.resCode",
+			b.res_type AS "sysResource.resType",
+			b.file_name AS "sysResource.fileName",
+			b.file_auffix AS "sysResource.fileAuffix",
+			b.file_url AS "sysResource.fileUrl",
+			b.icon_url AS "sysResource.iconUrl",
+			b.thumbnail_url AS "sysResource.thumbnailUrl",
+			b.status AS "sysResource.status",
+			b.is_hot AS "sysResource.isHot",
+			b.clicknum AS "sysResource.clicknum",
+			<choose>
+				<when test="userId != null and userId !=''">
+					CASE WHEN f.score IS NULL THEN 0 ELSE f.score END AS "star",
+					CASE WHEN f.score IS NULL THEN 0 ELSE 1 END AS "isStar",
+					CASE WHEN c.id IS NULL THEN 0 ELSE 1 END AS "isCollect",
+					CASE WHEN FIND_IN_SET(a.period_id,n.strs) THEN 0  ELSE a.isFree END AS "isCharge"
+				</when>
+				<otherwise>
+					0 AS "star",
+					0 AS "isStar",
+					0 AS "isCollect",
+					a.isFree AS "isCharge"
+				</otherwise>
+			</choose>
+		FROM c_course_fa a
+		LEFT JOIN sys_resource b ON a.res_code = b.res_code
+		<!-- LEFT JOIN (
+			SELECT
+				res_code,
+				floor (sum(score)/count(id)) AS "score"
+			FROM c_evaluation  
+			WHERE res_code = (select res_Code from c_course_fa where id = #{id})
+		) e on e.res_code = a.res_code -->
+		<if test="userId != null and userId !=''">
+			<![CDATA[
+			LEFT JOIN (
+	            SELECT
+	                res_code,
+	                score
+	            FROM
+	                c_evaluation 
+	            WHERE user_id = #{userId}
+	 		) f on f.res_code = a.res_code 
+			LEFT JOIN (
+				select 
+					id,
+					course_id
+				from c_user_collection where user_id = #{userId}
+			) c on c.course_id = a.res_code
+			LEFT JOIN (
+				SELECT 
+					GROUP_CONCAT(od.period_id) AS "strs"
+				FROM (
+					SELECT
+						o.period_id ,
+						DATE_FORMAT(now(), '%Y-%m-%d %H:%m:%s') >= DATE_FORMAT(max(o.expire_time), '%Y-%m-%d %H:%m:%s') AS "time"
+					FROM 	orders o 
+					LEFT JOIN c_user u  ON o.userid = u.id 
+					WHERE o.userid = #{userId}
+					AND o.is_pay = 1 
+					GROUP BY o.period_id
+				) od WHERE od.time = 0
+			) n ON 1 = 1
+			]]>
+		</if>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="getCourseListByclassidAndMonth" resultType="Course">
+		SELECT 
+			h.id AS "id",
+			h.mon_val AS "monval",
+			h.recommend_sort AS recommendSort,
+			h.sort AS sort,
+			h.course_name AS "courseName",
+			h.res_Code AS "resCode",
+			h.content AS "content",
+			h.thumbnail_url AS "thumbnailUrl",
+			h.icon_Url AS "iconUrl",
+			h.video_path AS "videoPath",
+			h.tagcode AS "tagcode",
+			h.tag AS "tag",
+			h.type AS "resType",
+			h.isCharge AS "isCharge"
+		FROM (
+			SELECT 
+				a.id,
+				a.mon_val,
+				a.recommend_sort,
+				a.sort,
+				a.course_name,
+				a.res_Code,
+				a.content,
+				a.thumbnail_url,
+				a.icon_Url,
+				a.video_path,
+				a.tagcode,
+				a.tag,
+				a.type,
+				<choose>
+					<when test="userId != null and userId !=''">
+						CASE WHEN FIND_IN_SET(a.period_id,n.strs) THEN 0  ELSE a.isFree END AS "isCharge"
+					</when>
+					<otherwise>
+						a.isFree AS "isCharge"
+					</otherwise>
+				</choose>
+			FROM c_course_fa a
+			<if test="userId != null and userId !=''">
+				<![CDATA[
+				LEFT JOIN (
+					SELECT 
+						GROUP_CONCAT(od.period_id) AS "strs"
+					FROM (
+						SELECT
+							o.period_id ,
+							DATE_FORMAT(now(), '%Y-%m-%d %H:%m:%s') >= DATE_FORMAT(max(o.expire_time), '%Y-%m-%d %H:%m:%s') AS "time"
+						FROM 	orders o 
+						LEFT JOIN c_user u  ON o.userid = u.id 
+						WHERE o.userid = #{userId}
+						AND o.is_pay = 1 
+						GROUP BY o.period_id
+					) od WHERE od.time = 0
+				) n ON 1 = 1
+				]]>
+			</if>
+			WHERE a.period_id = #{periodId} AND a.mon_val= #{monVal}
+		) h
+		ORDER BY h.isCharge,h.sort
+		<if test="index != null and index !=''">
+			 LIMIT 6
+		</if>
+	</select>
+	<select id="getCourseListByclassidAndMonthBySinglDay" resultType="Course">
+		SELECT 
+			a.id AS "id",
+			a.recommend_sort AS recommendSort,
+			a.sort AS sort,
+			a.mon_val AS "monval",
+			a.mon_id AS "monid",
+			a.course_name AS "courseName",
+			a.res_Code AS "resCode",
+			a.content AS "content",
+			a.thumbnail_url AS "thumbnailUrl",
+			a.icon_Url AS "iconUrl",
+			a.video_path AS "videoPath",
+			a.tagcode AS "tagcode",
+			a.tag AS "tag",
+			a.type as resType,
+			<choose>
+				<when test="userId != null and userId !=''">
+					CASE WHEN FIND_IN_SET(a.period_id,n.strs) THEN 0  ELSE a.isFree END AS "isCharge"
+				</when>
+				<otherwise>
+					a.isFree AS "isCharge"
+				</otherwise>
+			</choose>
+		FROM c_course_fa a
+		<if test="userId != null and userId !=''">
+			<![CDATA[
+			LEFT JOIN (
+				SELECT 
+					GROUP_CONCAT(od.period_id) AS "strs"
+				FROM (
+					SELECT
+						o.period_id ,
+						DATE_FORMAT(now(), '%Y-%m-%d %H:%m:%s') >= DATE_FORMAT(max(o.expire_time), '%Y-%m-%d %H:%m:%s') AS "time"
+					FROM 	orders o 
+					LEFT JOIN c_user u  ON o.userid = u.id 
+					WHERE o.userid = #{userId}
+					AND o.is_pay = 1 
+					GROUP BY o.period_id
+				) od WHERE od.time = 0
+			) n ON 1 = 1
+			]]>
+		</if>
+		WHERE a.period_id = #{periodId}  
+        and sort in (#{sort}-1,#{sort},#{sort}+1)
+		ORDER BY a.sort
+	</select>
+	<select id="findList" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM c_course_fa a
+		<include refid="courseJoins"/>
+		<where>
+			a.del_flag = '0'
+			<if test="price != null and price != ''">
+				and a.price = #{price}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Course">
+		SELECT 
+			<include refid="courseColumns"/>
+		FROM c_course_fa a
+		<include refid="courseJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO c_course_fa(
+			id,
+			mon_val,
+			course_name,
+			course_code,
+			attr1,
+			attr2,
+			attr3,
+			content,
+			recommend_age,
+			thumbnail_id,
+			thumbnail_url,
+			sd_image_id,
+			sd_image_url,
+			hd_image_id,
+			hd_image_url,
+			video_id,
+			video_path,
+			enable_download,
+			price,
+			sort,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{monval},
+			#{courseName},
+			#{courseCode},
+			#{attr1},
+			#{attr2},
+			#{attr3},
+			#{content},
+			#{recommendAge},
+			#{thumbnailId},
+			#{thumbnailUrl},
+			#{sdImageId},
+			#{sdImageUrl},
+			#{hdImageId},
+			#{hdImageUrl},
+			#{videoId},
+			#{videoPath},
+			#{enableDownload},
+			#{price},
+			#{sort},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE c_course_fa SET 	
+			mon_val = #{monval},
+			course_name = #{courseName},
+			course_code = #{courseCode},
+			attr1 = #{attr1},
+			attr2 = #{attr2},
+			attr3 = #{attr3},
+			content = #{content},
+			recommend_age = #{recommendAge},
+			thumbnail_id = #{thumbnailId},
+			thumbnail_url = #{thumbnailUrl},
+			sd_image_id = #{sdImageId},
+			sd_image_url = #{sdImageUrl},
+			hd_image_id = #{hdImageId},
+			hd_image_url = #{hdImageUrl},
+			video_id = #{videoId},
+			video_path = #{videoPath},
+			enable_download = #{enableDownload},
+			price = #{price},
+			sort = #{sort},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE c_course_fa SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	<!-- 课程详情 -->
+	<select id="detail" resultType="Course">
+		SELECT 
+			a.id AS "courseId",
+			a.mon_val as monval,
+			a.course_name AS "courseName",
+			a.course_code AS "courseCode",
+			a.content AS "content",
+			a.thumbnail_url AS "thumbnailUrl",
+			a.image_url AS "imageUrl",
+			a.video_path AS "videoPath",
+			a.clicksNum,
+			period_id as periodId,
+			a.isFree
+			FROM c_course_fa a
+		<where>
+			a.del_flag = '0'
+			<if test="id!=null and id!=''">
+				and a.id = #{id}
+			</if>
+			<if test="courseCode!=null and courseCode!=''">
+				and a.course_code =#{courseCode}
+			</if>
+		</where>
+	</select>
+	<!-- é¦é¡µå±ç¤ºåè´¹è¯¾ç¨ -->
+	<select id="getIndexCourse" resultType="Course" parameterType="Map">
+	select 
+	<include refid="courseColumns"/>
+	from c_course_fa a 
+	where a.del_flag = '0'
+	and a.period_id=#{periodId}
+	and recommend_sort=#{recommendSort}
+	limit 1
+	</select> 
+	<!-- è·å¾è¯¾ç¨åè¡¨ -->
+		<select id="getCourseList" resultType="Course">
+		SELECT
+		a.id AS "courseId",
+		a.course_name AS "courseName",
+		a.course_code AS "courseCode",
+		a.thumbnail_url AS "thumbnailUrl",
+		a.sort AS "sort",
+		a.clicksNum ,
+		a.create_date AS "createDate",
+		a.isFree,
+		a.period_id AS "periodId",
+		a.type AS "type",
+		a.video_path AS "videoPath"
+		FROM
+			c_course_fa a
+		WHERE
+		del_flag = '0'
+		<if test="monval !=null and monval!=''">
+				and	mon_val = #{monval}
+		</if>	
+		<if test="queryInfo !=null and queryInfo!=''">
+				and	course_name like '%${queryInfo}%'
+		</if>	
+		<if test="periodId !=null and periodId!=''">
+				and	period_id = #{periodId}
+		</if>
+		order by sort
+	</select>
+	<!-- å¢å è§é¢ç¹å»æ° -->
+	<update id="addClicksNum" >
+		update c_course_fa set clicksNum=clicksNum+1
+	where 
+		id=#{courseId}	
+	</update>
+	
+	
+	
+</mapper>

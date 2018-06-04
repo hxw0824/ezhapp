@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.sys.dao.SysMonitorDao">
+    
+	<sql id="sysMonitorColumns">
+		a.id AS "id",
+		a.name AS "name",
+		a.device_id AS "deviceId",
+		a.office_id AS "officeId",
+		a.class_id AS "classId",
+		a.ip AS "ip",
+		a.status AS "status",
+		a.begin_time AS "beginTime",
+		a.end_time AS "endTime",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		c.name AS "className"
+	</sql>
+	
+	<sql id="sysMonitorJoins">
+		LEFT JOIN c_class c ON c.id = a.class_id
+	</sql>
+    
+	<select id="get" resultType="SysMonitor">
+		SELECT 
+			<include refid="sysMonitorColumns"/>
+		FROM sys_monitor a
+		<include refid="sysMonitorJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="SysMonitor">
+		SELECT 
+			<include refid="sysMonitorColumns"/>
+		FROM sys_monitor a
+		<include refid="sysMonitorJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="SysMonitor">
+		SELECT 
+			<include refid="sysMonitorColumns"/>
+		FROM sys_monitor a
+		<include refid="sysMonitorJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO sys_monitor(
+			id,
+			name,
+			device_id,
+			office_id,
+			class_id,
+			ip,
+			status,
+			begin_time,
+			end_time,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{name},
+			#{deviceId},
+			#{officeId},
+			#{classId},
+			#{ip},
+			#{status},
+			#{beginTime},
+			#{endTime},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE sys_monitor SET 	
+			name = #{name},
+			device_id = #{deviceId},
+			office_id = #{officeId},
+			class_id = #{classId},
+			ip = #{ip},
+			status = #{status},
+			begin_time = #{beginTime},
+			end_time = #{endTime},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM sys_monitor
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 根据学校id获取学校所有监控 -->
+	<select id="findListByOffice" resultType="SysMonitor">
+		SELECT 
+			<include refid="sysMonitorColumns"/>
+		FROM sys_monitor a
+			<include refid="sysMonitorJoins"/>
+		WHERE a.office_id = #{officeId}
+		<if test="name != null and name != ''">
+			AND a.name = #{name}
+		</if>
+		<if test="deviceId != null and deviceId != ''">
+			AND a.device_id = #{deviceId}
+		</if>
+		<if test="classId != null and classId != ''">
+			AND a.class_id = #{classId}
+		</if>
+		<if test="status != null and status != ''">
+			AND a.status = #{status}
+		</if>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY c.period,a.status,a.create_date
+			</otherwise>
+		</choose>
+	</select>
+
+</mapper>
