@@ -3,3 +3,5 @@ local update ezhapp
 git is very good
 
 add dev branch
+
+master update
