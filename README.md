@@ -4,4 +4,4 @@ git is very good
 
 add dev branch
 
-master update
+master update & dev update merge
